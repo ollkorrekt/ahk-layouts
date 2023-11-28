@@ -1,14 +1,24 @@
-﻿FileEncoding "UTF-8"
+﻿#Requires AutoHotkey v2.0
+FileEncoding "UTF-8"
 
-heartKeyTable := Map(
+;TODO add the layout changing code, which can be activated by a key press
+;OPTION add ability to activate hotkey, change layout from a hotkey itself
+;OPTION deadkey lock, so currently active dead keys will stay on until pressed again
+;TODO make a hotkey able to output a keystroke at the same time.
+;TODO replace escapes and {} chars when passed in, for security and to allow, for example, {U+e000} = {u+E000}
+;TODO add support for a layout file remembering its folder
+;OPTION add some errors to throw on invalid input files
+;OPTION allow comments columns in csvs
+/*heartKeyTable := Map(
     "H", "♥"
 )
 heartKeyTable.nonspacing := "H"
 heartKeyTable.default := "7"
 heartKeyTable.postfix := True ; to place "nonspacing" ver. of diacritic to the right or left
-deadKeyStack := [heartKeyTable]
+deadKeyQueue := [heartKeyTable]*/
+deadKeyQueue := []
 
-readLayout("normalKeys.csv", 0)
+readLayout("ienneLayout.csv", 0)
 layout := 0
 layouts := 1
 
@@ -19,9 +29,9 @@ layouts := 1
  */
 deadKeySend(key)
 {
-    global deadKeyStack
-    if (deadKeyStack.Length > 0) {
-        deadKeySend(deadKeyLookup(deadKeyStack.Pop(), key))
+    global deadKeyQueue
+    if (deadKeyQueue.Length > 0) {
+        deadKeySend(deadKeyLookup(deadKeyQueue.RemoveAt(1), key))
     } else {
         Send key ;maybe should use raw mode here, but want character escapes.
         /* could be danguerous since sent text can be edited by external files.
@@ -33,7 +43,12 @@ deadKeySend(key)
     }
 }
 
-dead
+/* when a dead key is pressed, we put it on the stack and wait for further input
+ */
+deadKeyAdd(deadKeyTable){
+    global deadKeyQueue
+    deadKeyQueue.push(deadKeyTable)
+}
 
 /* apply the effects of a dead key given in deadKeyTable (which should have
  * been read from a file spcifying the key) to the given keystroke (string).
@@ -117,7 +132,8 @@ readLayout(file, layoutN)
      */
     processCsvField(lineN, cellN, cellText)
     {
-        local static capsString := "capsIsShift" ;whatever, don't like magic num
+        static capsString := "capsIsShift" ;whatever, don't like magic num
+        static deadKeyString := "DeadKey:"
         ;interpret a column header
         if (lineN == 1) {
             ;is this a caps behavior column?
@@ -139,10 +155,14 @@ readLayout(file, layoutN)
             local toggledModifier := toggleShift(modifier)
             capsAreShifts[modifier] := capsIsShift
             capsAreShifts[toggledModifier] := capsIsShift
+        ;interpret a deadkey (which should specify another csv file)
+        } else if (Substr(cellText, 1, StrLen(deadKeyString)) = deadKeyString) {
+            deadKeyFile := Substr(cellText, StrLen(deadKeyString) + 1)
+            deadKeyTable := readDeadKey(deadKeyFile, currentKey)
+            return (*) => deadKeyAdd(deadKeyTable)
         ;interpret a normal cell
         } else {
             return (*) => deadKeySend(cellText)
-            ;TODO add dead key code here
         }
     }
 
@@ -178,9 +198,55 @@ readLayout(file, layoutN)
     }
 }
 
-readDeadKey(file)
+readDeadKey(file, pressedKey)
 {
+    ;initialize vars:
+    ;the return table to contain a specification of the dead key
+    keyTable := Map()
+    keyTable.nonspacing := ''
+    keyTable.default := pressedKey
+    keyTable.postfix := True
+    /* keyTable.nonspacing is what to send when no specified key combination is
+     * pressed;
+     * keyTable.default is the key to press to directly get nonspacing;
+     * keyTable.postfix to place "nonspacing" ver. of diacritic to the right or
+     * left of a given key combination. True for postfix, False for prefix.
+     * 
+     * maybe it's obvious that this should be a class, but then again perhaps so
+     * should some other values I'm not sure of.
+     */
+    local currentKey ;stored keystroke value to be used when result is read
 
+    loop read, file {
+        lineN := A_Index
+        ;for each cell in the csv,
+        loop parse, A_LoopReadLine, "CSV" {
+            cellN := A_Index
+            cellText := A_LoopField
+            ;the cells in the header
+            if (lineN = 1) {
+                ;first cell optionally specifies an alternate default keystroke
+                if (cellN = 1 and cellText){
+                    keyTable.default := cellText
+                    ;TODO if this cell is false, no default will be used.
+                } else if (cellN = 2) {
+                    firstChar := SubStr(cellText, 1, 1)
+                    if (firstChar = '<' or firstChar = '>') {
+                        cellText := SubStr(cellText, 2)
+                        keyTable.postfix := firstChar = '>'
+                    }
+                    keyTable.nonspacing := cellText
+                }
+            ;interpret a key header
+            } else if (cellN = 1){
+                currentKey := cellText
+            ;interpret a key's result when the dead key is applied to it
+            } else if (cellN = 2) {
+                keyTable[currentKey] := cellText
+            }
+        }
+    }
+    return keyTable
 }
 
 /* Given a normalized hotkey modifier, toggle whether shift is held (i.e.,

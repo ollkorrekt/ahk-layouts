@@ -26,12 +26,12 @@ x,TRUE,x,X
 y,TRUE,y,Y
 z,TRUE,z,Z
 Space,FALSE, , 
-1,FALSE,1,!
+1,FALSE,1,{!}
 2,FALSE,2,@
-3,FALSE,3,#
+3,FALSE,3,{#}
 4,FALSE,4,$
 5,FALSE,5,%
-6,FALSE,6,^
+6,FALSE,6,{^}
 7,FALSE,7,&
 8,FALSE,8,*
 9,FALSE,9,(
@@ -43,7 +43,7 @@ Space,FALSE, ,
 ",",FALSE,",",<
 .,FALSE,.,>
 /,FALSE,/,?
-=,FALSE,=,+
+=,FALSE,=,{+}
 \,FALSE,\,|
 -,FALSE,-,_
 ;,FALSE,;,:
