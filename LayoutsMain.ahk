@@ -2,7 +2,7 @@
 FileEncoding "UTF-8"
 
 ;TODO add the layout changing code, which can be activated by a key press
-;OPTION add ability to activate hotkey, change layout from a hotkey itself
+;OPTION add ability to activate hotkey, change layout from a hotkey itself - already sort of covered by hotkey stacking, but this does not allow us to have a compound nonspacing char.
 ;OPTION deadkey lock, so currently active dead keys will stay on until pressed again
 ;TODO make a hotkey able to output a keystroke at the same time.
 ;TODO replace escapes and {} chars when passed in, for security and to allow, for example, {U+e000} = {u+E000}
@@ -17,6 +17,7 @@ heartKeyTable.default := "7"
 heartKeyTable.postfix := True ; to place "nonspacing" ver. of diacritic to the right or left
 deadKeyQueue := [heartKeyTable]*/
 deadKeyQueue := []
+currentDefault := ''
 
 readLayout("ienneLayout.csv", 0)
 layout := 0
@@ -30,8 +31,9 @@ layouts := 1
 deadKeySend(key)
 {
     global deadKeyQueue
+    global currentDefault
     if (deadKeyQueue.Length > 0) {
-        deadKeySend(deadKeyLookup(deadKeyQueue.RemoveAt(1), key))
+        deadKeySend(deadKeyLookup(deadKeyQueue.RemoveAt(1), key, currentDefault))
     } else {
         Send key ;maybe should use raw mode here, but want character escapes.
         /* could be danguerous since sent text can be edited by external files.
@@ -40,6 +42,7 @@ deadKeySend(key)
          * I don't think it's too dangerous, as non-admin ahk cannot do admin
          * actions.
          */
+        currentDefault := ''
     }
 }
 
@@ -47,20 +50,24 @@ deadKeySend(key)
  */
 deadKeyAdd(deadKeyTable){
     global deadKeyQueue
+    global currentDefault
     deadKeyQueue.push(deadKeyTable)
+    if (deadKeyTable.HasOwnProp("default")){
+        currentDefault := deadKeyTable.default
+    }
 }
 
 /* apply the effects of a dead key given in deadKeyTable (which should have
  * been read from a file spcifying the key) to the given keystroke (string).
  * Return the resulting keystroke as a string.
  */
-deadKeyLookup(deadKeyTable, key)
+deadKeyLookup(deadKeyTable, key, default)
 {
-    if (deadKeyTable.Has(key)) {
-        return deadKeyTable[key]
-    } if (deadKeyTable.HasOwnProp("default") and key == deadKeyTable.default) {
+    if (default and key == default) {
         ;if the same key is pressed again, give back the nonspacing diacritic.
         return deadKeyTable.nonspacing
+    } if (deadKeyTable.Has(key)) {
+        return deadKeyTable[key]
     }
     /* otherwise, we give back the nonspacing diacritic applied to the pressed
      * key as a fallback. it is an option whether to place this diacritic
