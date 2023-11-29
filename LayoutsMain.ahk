@@ -19,7 +19,7 @@ deadKeyQueue := [heartKeyTable]*/
 deadKeyQueue := []
 currentDefault := ''
 
-readLayout("ienneLayout.csv", 0)
+readLayout("ienne\ienneLayout.csv", 0)
 layout := 0
 layouts := 1
 
@@ -98,8 +98,11 @@ ChangeLayout(layoutN := "next")
  */
 readLayout(file, layoutN)
 {
+    ;file := A_WorkingDir '\' file ;TODO only add this if necessary
     HotIf((*) => layout == layoutN) ;only enabled if the layout is selected
     
+    local layoutDir
+    SplitPath(file,, &layoutDir) ;get the directory of this file for use later
     ;initialize vars:
     modifiers := []
     local currentKey ;always gets set within processCsvField
@@ -165,7 +168,7 @@ readLayout(file, layoutN)
         ;interpret a deadkey (which should specify another csv file)
         } else if (Substr(cellText, 1, StrLen(deadKeyString)) = deadKeyString) {
             deadKeyFile := Substr(cellText, StrLen(deadKeyString) + 1)
-            deadKeyTable := readDeadKey(deadKeyFile, currentKey)
+            deadKeyTable := readDeadKey(deadKeyFile, currentKey, layoutDir)
             return (*) => deadKeyAdd(deadKeyTable)
         ;interpret a normal cell
         } else {
@@ -205,17 +208,18 @@ readLayout(file, layoutN)
     }
 }
 
-readDeadKey(file, pressedKey)
+readDeadKey(file, pressedKey, layoutDir)
 {
     ;initialize vars:
     ;the return table to contain a specification of the dead key
+    file := layoutDir '\' file ;TODO only do this if necessary
     keyTable := Map()
     keyTable.nonspacing := ''
-    keyTable.default := pressedKey
     keyTable.postfix := True
     /* keyTable.nonspacing is what to send when no specified key combination is
      * pressed;
-     * keyTable.default is the key to press to directly get nonspacing;
+     * keyTable.default is the key to press to directly get nonspacing; if it is
+     * not defined, you cannot do that;
      * keyTable.postfix to place "nonspacing" ver. of diacritic to the right or
      * left of a given key combination. True for postfix, False for prefix.
      * 
@@ -234,8 +238,17 @@ readDeadKey(file, pressedKey)
             if (lineN = 1) {
                 ;first cell optionally specifies an alternate default keystroke
                 if (cellN = 1 and cellText){
-                    keyTable.default := cellText
-                    ;TODO if this cell is false, no default will be used.
+                    /* if this cell is false but not blank, no default will be
+                     * used; usu. for dead keys that do not have a non-spacing
+                     * variant and which need the slot of their key for a
+                     * combination, like the ienne layout's 6 -> ⁶
+                     */
+                    if (cellText and (cellText != "False")){
+                        keyTable.default := cellText
+                    ;otherwise if it's blank use a default same as the dead key
+                    } else if (cellText = ""){
+                        keyTable.default := pressedKey
+                    }
                 } else if (cellN = 2) {
                     firstChar := SubStr(cellText, 1, 1)
                     if (firstChar = '<' or firstChar = '>') {
