@@ -9,13 +9,7 @@ FileEncoding "UTF-8"
 ;TODO add support for a layout file remembering its folder
 ;OPTION add some errors to throw on invalid input files
 ;OPTION allow comments columns in csvs
-/*heartKeyTable := Map(
-    "H", "♥"
-)
-heartKeyTable.nonspacing := "H"
-heartKeyTable.default := "7"
-heartKeyTable.postfix := True ; to place "nonspacing" ver. of diacritic to the right or left
-deadKeyQueue := [heartKeyTable]*/
+
 deadKeyQueue := []
 currentDefault := ''
 
@@ -98,7 +92,10 @@ ChangeLayout(layoutN := "next")
  */
 readLayout(file, layoutN)
 {
-    ;file := A_WorkingDir '\' file ;TODO only add this if necessary
+    ;error if the layout file was not found
+    if (not fileExist(file)) {
+        throw error("no file found for layout: " file)
+    }
     HotIf((*) => layout == layoutN) ;only enabled if the layout is selected
     
     local layoutDir
@@ -210,9 +207,27 @@ readLayout(file, layoutN)
 
 readDeadKey(file, pressedKey, layoutDir)
 {
+    static deadKeyDirName := "deadKeys"
     ;initialize vars:
+    ;create a number of possible file locations
+    layoutDirFile := layoutDir '\' file
+    layoutSubdirFile := layoutDir '\' deadKeyDirName '\' file
+    subdirFile := deadKeyDirName '\' file
+    ;use the first file location where the file was found
+    foundFile := FileExist(layoutSubdirFile)
+        ? layoutSubdirFile
+        : FileExist(layoutDirFile)
+            ? layoutDirFile
+            : FileExist(subdirFile)
+                ? subdirFile
+                : FileExist(file)
+                    ? file
+                    : ''
+    ;error if the dead key file was not found at all
+    if (not foundFile) {
+        throw error("no file found for dead key: " file)
+    }
     ;the return table to contain a specification of the dead key
-    file := layoutDir '\' file ;TODO only do this if necessary
     keyTable := Map()
     keyTable.nonspacing := ''
     keyTable.postfix := True
@@ -228,7 +243,7 @@ readDeadKey(file, pressedKey, layoutDir)
      */
     local currentKey ;stored keystroke value to be used when result is read
 
-    loop read, file {
+    loop read, foundFile {
         lineN := A_Index
         ;for each cell in the csv,
         loop parse, A_LoopReadLine, "CSV" {
@@ -237,7 +252,7 @@ readDeadKey(file, pressedKey, layoutDir)
             ;the cells in the header
             if (lineN = 1) {
                 ;first cell optionally specifies an alternate default keystroke
-                if (cellN = 1 and cellText){
+                if (cellN = 1){
                     /* if this cell is false but not blank, no default will be
                      * used; usu. for dead keys that do not have a non-spacing
                      * variant and which need the slot of their key for a
