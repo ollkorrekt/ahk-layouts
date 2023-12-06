@@ -30,12 +30,12 @@ deadKeySend(key)
         deadKeySend(deadKeyLookup(deadKeyQueue.RemoveAt(1), key, currentDefault))
     } else {
         Send key ;maybe should use raw mode here, but want character escapes.
-        /* could be danguerous since sent text can be edited by external files.
-         * for example, {Click} and {Launch_X} are available. To be safe, we
-         * should reccomend to make layout files administrator read only, maybe.
-         * I don't think it's too dangerous, as non-admin ahk cannot do admin
-         * actions.
-         */
+       /* could be danguerous since sent text can be edited by external files.
+        * for example, {Click} and {Launch_X} are available. To be safe, we
+        * should reccomend to make layout files administrator read only, maybe.
+        * I don't think it's too dangerous, as non-admin ahk cannot do admin
+        * actions.
+        */
         currentDefault := ''
     }
 }
@@ -63,12 +63,12 @@ deadKeyLookup(deadKeyTable, key, default)
     } if (deadKeyTable.Has(key)) {
         return deadKeyTable[key]
     }
-    /* otherwise, we give back the nonspacing diacritic applied to the pressed
-     * key as a fallback. it is an option whether to place this diacritic
-     * to the right or left of the character, because placing it before can
-     * be appropriate if it is not actually a combining unicode character,
-     * for example if we are making a layout for hangul.
-     */
+   /* otherwise, we give back the nonspacing diacritic applied to the pressed
+    * key as a fallback. it is an option whether to place this diacritic
+    * to the right or left of the character, because placing it before can
+    * be appropriate if it is not actually a combining unicode character,
+    * for example if we are making a layout for hangul.
+    */
     return deadKeyTable.postfix
         ? key . deadKeyTable.nonspacing
         : deadKeyTable.nonspacing . key
@@ -107,6 +107,11 @@ readLayout(file, layoutN)
     modifierColumns := Map() ;tell the index of each modifier
     capsAreShifts := Map("", True, "+", True)
     local keyFs ;function to run for each hotkey; reset before each row.
+   /* flag that flips once we find a column with an empty header; only the first
+    * column will be treated as having an empty modifier, and others will be
+    * comment columns.
+    */
+    local unmodifiedColFound := False
 
     loop read, file {
         lineN := A_Index
@@ -131,18 +136,34 @@ readLayout(file, layoutN)
         }
     }
     
-    /* Read in a csv field and either interpret it as a header if it is in the
-     * first row or column or interpret it as specifying a layout entry or a
-     * caps lock behavior tag otherwise; this was split into another function to
-     * allow returning the function as a closure, but it accesses many of the
-     * outer function's vars.
-     */
+   /* Read in a csv field and either interpret it as a header if it is in the
+    * first row or column or interpret it as specifying a layout entry or a
+    * caps lock behavior tag otherwise; this was split into another function to
+    * allow returning the function as a closure, but it accesses many of the
+    * outer function's vars.
+    */
     processCsvField(lineN, cellN, cellText)
     {
+        static modifierString := "Modifier"
         static capsString := "capsIsShift" ;whatever, don't like magic num
         static deadKeyString := "DeadKey:"
+        static commentString := "Comment"
+        switch {
         ;interpret a column header
-        if (lineN == 1) {
+        case (lineN == 1):
+            ;if this is the first column, we just ignore its header
+            if (cellN = 1):
+                modifiers.push(modifierString)
+                modifierColumns[modifierString] := 1
+                return
+            ;make this column a comment col if it's not the first empty column.
+            if (cellText := ""){
+                if (not unmodifiedColFound){
+                    unmodifiedColFound := True
+                } else {
+                    cellText := commentString
+                }
+            }
             ;is this a caps behavior column?
             local taglessModifer := StrReplace(cellText, capsString, "")
             local isCapsColumn := cellText != taglessModifer
@@ -151,39 +172,44 @@ readLayout(file, layoutN)
             taglessModifer := normalizeModifier(taglessModifer)
             ;put it on the lists
             modifiers.Push(taglessModifer)
-            /* We want to skip it if this is just a tag column so it doesn't
-             * overwrite the location of the real column.
-             */
+           /* We want to skip it if this is just a tag column so it doesn't
+            * overwrite the location of the real column.
+            */
             if (not isCapsColumn){
                 modifierColumns[taglessModifer] := cellN
             }
         ;interpret a key header
-        } else if (cellN = 1){
+        case (cellN = 1):
             currentKey := cellText
         ;interpret a caps lock column cell
-        } else if (capsColumns[cellN]){
+        case capsColumns[cellN]:
             ;caps will =shift if the cell evaluates to false or is that text
             local capsIsShift := cellText and (cellText != "false")
             local modifier := modifiers[cellN]
             local toggledModifier := toggleShift(modifier)
             capsAreShifts[modifier] := capsIsShift
             capsAreShifts[toggledModifier] := capsIsShift
+       /* interpret a comment cell, that is, one which is marked "comment" in
+        * the header, or one which has an empty header other than the first.
+        */
+        case modifier[cellN] = commentString:
+            return ;just do nothing.
         ;interpret a deadkey (which should specify another csv file)
-        } else if (Substr(cellText, 1, StrLen(deadKeyString)) = deadKeyString) {
+        case (Substr(cellText, 1, StrLen(deadKeyString)) = deadKeyString):
             deadKeyFile := Substr(cellText, StrLen(deadKeyString) + 1)
             deadKeyTable := readDeadKey(deadKeyFile, currentKey, layoutDir)
             return (*) => deadKeyAdd(deadKeyTable)
         ;interpret a normal cell
-        } else {
+        default:
             return (*) => deadKeySend(cellText)
         }
     }
 
-    /* Modify our function to apply capsLock; this had to be done separately
-     * because the column specifying caps lock behavior could come after the 
-     * cols specifying whichever particular modifier with and without shift held
-     * down. Split to return a closure.
-     */
+   /* Modify our function to apply capsLock; this had to be done separately
+    * because the column specifying caps lock behavior could come after the 
+    * cols specifying whichever particular modifier with and without shift held
+    * down. Split to return a closure.
+    */
     processF(columnN)
     {
         local modifier := modifiers[columnN]
@@ -197,9 +223,9 @@ readLayout(file, layoutN)
         local toggledF := keyFs[modifierColumns[toggledModifier]]
         return applyCapsF
         
-        /* Effectively switch shift state if caps lock is on (by using the
-         * function for the shift-toggled version of this hotkey).
-         */
+       /* Effectively switch shift state if caps lock is on (by using the
+        * function for the shift-toggled version of this hotkey).
+        */
         applyCapsF(*)
         {
             if (getKeyState("CapsLock", "T")) {
@@ -237,16 +263,16 @@ readDeadKey(file, pressedKey, layoutDir)
     keyTable := Map()
     keyTable.nonspacing := ''
     keyTable.postfix := True
-    /* keyTable.nonspacing is what to send when no specified key combination is
-     * pressed;
-     * keyTable.default is the key to press to directly get nonspacing; if it is
-     * not defined, you cannot do that;
-     * keyTable.postfix to place "nonspacing" ver. of diacritic to the right or
-     * left of a given key combination. True for postfix, False for prefix.
-     * 
-     * maybe it's obvious that this should be a class, but then again perhaps so
-     * should some other values I'm not sure of.
-     */
+   /* keyTable.nonspacing is what to send when no specified key combination is
+    * pressed;
+    * keyTable.default is the key to press to directly get nonspacing; if it is
+    * not defined, you cannot do that;
+    * keyTable.postfix to place "nonspacing" ver. of diacritic to the right or
+    * left of a given key combination. True for postfix, False for prefix.
+    * 
+    * maybe it's obvious that this should be a class, but then again perhaps so
+    * should some other values I'm not sure of.
+    */
     local currentKey ;stored keystroke value to be used when result is read
 
     loop read, foundFile {
@@ -261,11 +287,11 @@ readDeadKey(file, pressedKey, layoutDir)
                 switch cellN
                 {
                 case 1:
-                    /* if this cell is false but not blank, no default will be
-                     * used; usu. for dead keys that do not have a non-spacing
-                     * variant and which need the slot of their key for a
-                     * combination, like the ienne layout's 6 -> ⁶
-                     */
+                   /* if this cell is false but not blank, no default will be
+                    * used; usu. for dead keys that do not have a non-spacing
+                    * variant and which need the slot of their key for a
+                    * combination, like the ienne layout's 6 -> ⁶
+                    */
                     if (cellText and (cellText != "False")){
                         keyTable.default := cellText
                     ;otherwise if it's blank use a default same as the dead key
@@ -279,7 +305,8 @@ readDeadKey(file, pressedKey, layoutDir)
                         keyTable.postfix := firstChar = '>'
                     }
                     keyTable.nonspacing := cellText
-                /* There is no default case; other cells are ignored as comments
+               /* There is no default case; other cells that are not in the
+                * first two columns are ignored as comments
                 */
                 }
             ;interpret a key header
@@ -324,10 +351,10 @@ normalizeModifier(modifier)
 
 normalizeEscapes(rawString)
 {
-    /* We only want the escaped characters, not any escaped clicks or anything;
-     * those could be too dangerous. Furthermore, we want any escaped characters
-     * to be treated the same as equivalent sequences, or as the literals.
-     */
+   /* We only want the escaped characters, not any escaped clicks or anything;
+    * those could be too dangerous. Furthermore, we want any escaped characters
+    * to be treated the same as equivalent sequences, or as the literals.
+    */
     local foundBrace
     local normalizedString := rawString
     ;TODO oh dear, need to figure out how to not find the same brace again
