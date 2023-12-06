@@ -145,12 +145,18 @@ readLayout(file, layoutN)
         if (lineN == 1) {
             ;is this a caps behavior column?
             local taglessModifer := StrReplace(cellText, capsString, "")
-            capsColumns[cellN] := cellText != taglessModifer
+            local isCapsColumn := cellText != taglessModifer
+            capsColumns[cellN] := isCapsColumn
             ;normalize to make modifier easy to work with.
             taglessModifer := normalizeModifier(taglessModifer)
             ;put it on the lists
             modifiers.Push(taglessModifer)
-            modifierColumns[taglessModifer] := cellN
+            /* We want to skip it if this is just a tag column so it doesn't
+             * overwrite the location of the real column.
+             */
+            if (not isCapsColumn){
+                modifierColumns[taglessModifer] := cellN
+            }
         ;interpret a key header
         } else if (cellN = 1){
             currentKey := cellText
@@ -252,7 +258,9 @@ readDeadKey(file, pressedKey, layoutDir)
             ;the cells in the header
             if (lineN = 1) {
                 ;first cell optionally specifies an alternate default keystroke
-                if (cellN = 1){
+                switch cellN
+                {
+                case 1:
                     /* if this cell is false but not blank, no default will be
                      * used; usu. for dead keys that do not have a non-spacing
                      * variant and which need the slot of their key for a
@@ -264,20 +272,24 @@ readDeadKey(file, pressedKey, layoutDir)
                     } else if (cellText = ""){
                         keyTable.default := pressedKey
                     }
-                } else if (cellN = 2) {
+                case 2:
                     firstChar := SubStr(cellText, 1, 1)
                     if (firstChar = '<' or firstChar = '>') {
                         cellText := SubStr(cellText, 2)
                         keyTable.postfix := firstChar = '>'
                     }
                     keyTable.nonspacing := cellText
+                /* There is no default case; other cells are ignored as comments
+                */
                 }
             ;interpret a key header
-            } else if (cellN = 1){
+            } else switch (cellN) {
+            case 1:
                 currentKey := cellText
             ;interpret a key's result when the dead key is applied to it
-            } else if (cellN = 2) {
+            case 2:
                 keyTable[currentKey] := cellText
+            ;again, any other cells will be ignored as comments.
             }
         }
     }
@@ -308,4 +320,21 @@ normalizeModifier(modifier)
         return plusless . "+"
     }
     return plusless
+}
+
+normalizeEscapes(rawString)
+{
+    /* We only want the escaped characters, not any escaped clicks or anything;
+     * those could be too dangerous. Furthermore, we want any escaped characters
+     * to be treated the same as equivalent sequences, or as the literals.
+     */
+    local foundBrace
+    local normalizedString := rawString
+    ;TODO oh dear, need to figure out how to not find the same brace again
+    While (foundBrace := InStr(normalizedString, '{')){
+        if (SubStr(normalizedString, foundbrace))
+            {
+                
+            }
+    }
 }
