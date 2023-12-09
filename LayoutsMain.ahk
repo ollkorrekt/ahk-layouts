@@ -9,6 +9,7 @@ FileEncoding "UTF-8"
 ;TODO add support for a layout file remembering its folder
 ;OPTION add some errors to throw on invalid input files
 ;OPTION allow comments columns in csvs
+;OPTION none of the csvs support line breaks in quotes, but they really should
 
 deadKeyQueue := []
 currentDefault := ''
@@ -16,6 +17,8 @@ currentDefault := ''
 readLayout("ienne\ienneLayout.csv", 0)
 layout := 0
 layouts := 1
+
+#Include "lookupAltCode.ahk"
 
 /* try to send a keystroke after applying the effects of all active dead keys,
  * if applicable. This function may apply multiple dead keys, feading the
@@ -29,7 +32,7 @@ deadKeySend(key)
     if (deadKeyQueue.Length > 0) {
         deadKeySend(deadKeyLookup(deadKeyQueue.RemoveAt(1), key, currentDefault))
     } else {
-        Send key ;maybe should use raw mode here, but want character escapes.
+        Send '{Raw}' key ;maybe should use raw mode here, but want character escapes.
        /* could be danguerous since sent text can be edited by external files.
         * for example, {Click} and {Launch_X} are available. To be safe, we
         * should reccomend to make layout files administrator read only, maybe.
@@ -148,16 +151,20 @@ readLayout(file, layoutN)
         static capsString := "capsIsShift" ;whatever, don't like magic num
         static deadKeyString := "DeadKey:"
         static commentString := "Comment"
+        ;get rid of escape sequences.
+        cellText := normalizeEscapes(cellText)
         switch {
         ;interpret a column header
-        case (lineN == 1):
+        case (lineN = 1):
             ;if this is the first column, we just ignore its header
-            if (cellN = 1):
+            if (cellN = 1){
                 modifiers.push(modifierString)
                 modifierColumns[modifierString] := 1
+                capsColumns[1] := False
                 return
+            }
             ;make this column a comment col if it's not the first empty column.
-            if (cellText := ""){
+            if (cellText = ""){
                 if (not unmodifiedColFound){
                     unmodifiedColFound := True
                 } else {
@@ -165,34 +172,34 @@ readLayout(file, layoutN)
                 }
             }
             ;is this a caps behavior column?
-            local taglessModifer := StrReplace(cellText, capsString, "")
-            local isCapsColumn := cellText != taglessModifer
+            local taglessModifier := StrReplace(cellText, capsString, "")
+            local isCapsColumn := cellText != taglessModifier
             capsColumns[cellN] := isCapsColumn
             ;normalize to make modifier easy to work with.
-            taglessModifer := normalizeModifier(taglessModifer)
+            taglessModifier := normalizeModifier(taglessModifier)
             ;put it on the lists
-            modifiers.Push(taglessModifer)
+            modifiers.Push(taglessModifier)
            /* We want to skip it if this is just a tag column so it doesn't
             * overwrite the location of the real column.
             */
             if (not isCapsColumn){
-                modifierColumns[taglessModifer] := cellN
+                modifierColumns[taglessModifier] := cellN
             }
         ;interpret a key header
         case (cellN = 1):
             currentKey := cellText
         ;interpret a caps lock column cell
-        case capsColumns[cellN]:
+        case (capsColumns[cellN]):
             ;caps will =shift if the cell evaluates to false or is that text
-            local capsIsShift := cellText and (cellText != "false")
-            local modifier := modifiers[cellN]
-            local toggledModifier := toggleShift(modifier)
+            capsIsShift := cellText and (cellText != "false")
+            modifier := modifiers[cellN]
+            toggledModifier := toggleShift(modifier)
             capsAreShifts[modifier] := capsIsShift
             capsAreShifts[toggledModifier] := capsIsShift
        /* interpret a comment cell, that is, one which is marked "comment" in
         * the header, or one which has an empty header other than the first.
         */
-        case modifier[cellN] = commentString:
+        case modifiers[cellN] = commentString:
             return ;just do nothing.
         ;interpret a deadkey (which should specify another csv file)
         case (Substr(cellText, 1, StrLen(deadKeyString)) = deadKeyString):
@@ -280,7 +287,8 @@ readDeadKey(file, pressedKey, layoutDir)
         ;for each cell in the csv,
         loop parse, A_LoopReadLine, "CSV" {
             cellN := A_Index
-            cellText := A_LoopField
+            ;normalize any escape sequences to their literal chars
+            cellText := normalizeEscapes(A_LoopField)
             ;the cells in the header
             if (lineN = 1) {
                 ;first cell optionally specifies an alternate default keystroke
@@ -349,6 +357,7 @@ normalizeModifier(modifier)
     return plusless
 }
 
+;TODO document this, add support for backtick escapes too.
 normalizeEscapes(rawString)
 {
    /* We only want the escaped characters, not any escaped clicks or anything;
@@ -356,12 +365,82 @@ normalizeEscapes(rawString)
     * to be treated the same as equivalent sequences, or as the literals.
     */
     local foundBrace
-    local normalizedString := rawString
-    ;TODO oh dear, need to figure out how to not find the same brace again
-    While (foundBrace := InStr(normalizedString, '{')){
-        if (SubStr(normalizedString, foundbrace))
-            {
-                
+    local foundClosingBrace
+    local normalizedString := ""
+    While (foundBrace := InStr(rawString, '{')){
+        foundClosingBrace := InStr(rawString, '}', "Off", foundBrace)
+        if (not foundClosingBrace){
+            break
+        }
+        sequenceLength := foundClosingBrace - foundBrace - 1
+        escapeSequence := SubStr(rawString, foundbrace+1, sequenceLength)
+        rawString := SubStr(rawString, foundClosingBrace+1)
+        convertedEscape := ""
+        ;OPTION allow sending some of these with a specific exception
+       /* Don't currently cover the following brace escape sequences, which may
+        * be safe:
+        * {Escape}, {Esc}, {Ctrl} etc., {Alt} etc., {LWin} etc., {AppsKey},
+        *     {Sleep}, {vkXXscYYY} etc., {Browser_Back} etc., {Volume_Mute}
+        *     etc., {Launch_X}, {CtrlBreak}, {Pause}, {Click} etc., {LButton}
+        *     etc., all because of security concerns - note that sending escape
+        *     might still be possible with control chars.
+        * {Delete}, {Del}, {Insert}, {Ins}, {Up}, {Down}, {Left}, {Right},
+        *     {Home}, {End}, {PgUp}, {PgDn}, {CapsLock}, {ScrollLock},
+        *     {NumLock}, {Shift}, {LShift}, {RShift}, {Shift down}, {Numpad0}
+        *     etc., {PrintScreen} as there is no clear way to send these in raw
+        *     mode.
+        * {Blind}
+        */
+        switch (escapeSequence, "Off"){
+        case 'Text', 'Raw':
+        ;OPTION make text mode work differently from raw
+       /* raw mode will be active anyway, so just ignore this tag and then exit
+        * out of text processing, ignoring other brace escapes.
+        */
+            break
+        case "":
+        ;look for the special escape sequence '{}}'
+            if (Substr(rawString, 1, 1) = '}'){
+                rawString := SubStr(rawString, 2)
+                convertedEscape := '}'
+            } else {
+                convertedEscape := '{}'
             }
+        case '!', '#', '+', '^', '{':
+        ;escape sequences that just output that character
+            convertedEscape := escapeSequence
+        case 'Enter':
+            convertedEscape := '`n'
+        case 'Space':
+            convertedEscape := ' '
+        case 'Tab':
+            convertedEscape := '`t'
+        case 'Backspace', 'BS':
+            convertedEscape := '`b'
+        default:
+            ;Alt Codes
+            if (SubStr(escapeSequence, 1, 4) = "ASC ") {
+                try {
+                    convertedEscape := lookupAltCode(SubStr(escapeSequence, 5))
+                } catch ValueError {
+                    convertedEscape := '{' escapeSequence '}'
+                }
+            ;unicode
+            } else if (SubStr(escapeSequence, 1, 2) = "U+") {
+                try {
+                    codePoint := '0x' . SubStr(escapeSequence, 3)
+                    convertedEscape := chr(codePoint)
+                } catch ValueError, TypeError {
+                    convertedEscape := '{' escapeSequence '}'
+                }
+            ;not a valid brace escape
+            } else {
+                convertedEscape := '{' escapeSequence '}'
+            }
+        }
+        normalizedString .= convertedEscape
     }
+    return normalizedString . rawString
 }
+
+
