@@ -5,8 +5,6 @@ FileEncoding "UTF-8"
 ;OPTION add ability to activate hotkey, change layout from a hotkey itself - already sort of covered by hotkey stacking, but this does not allow us to have a compound nonspacing char.
 ;OPTION deadkey lock, so currently active dead keys will stay on until pressed again
 ;TODO make a hotkey able to output a keystroke at the same time.
-;TODO replace escapes and {} chars when passed in, for security and to allow, for example, {U+e000} = {u+E000}
-;TODO add support for a layout file remembering its folder
 ;OPTION add some errors to throw on invalid input files
 ;OPTION allow comments columns in csvs
 ;OPTION none of the csvs support line breaks in quotes, but they really should
@@ -93,16 +91,16 @@ ChangeLayout(layoutN := "next")
  * more layouts at once than just one... maybe making layout a complex object
  * would work.
  */
-readLayout(file, layoutN)
+readLayout(filename, layoutN)
 {
     ;error if the layout file was not found
-    if (not fileExist(file)) {
-        throw error("no file found for layout: " file)
+    if (not fileExist(filename)) {
+        throw error("no file found for layout: " filename)
     }
     HotIf((*) => layout == layoutN) ;only enabled if the layout is selected
     
     local layoutDir
-    SplitPath(file,, &layoutDir) ;get the directory of this file for use later
+    SplitPath(filename,, &layoutDir) ;get the directory of this file for use later
     ;initialize vars:
     modifiers := []
     local currentKey ;always gets set within processCsvField
@@ -116,7 +114,7 @@ readLayout(file, layoutN)
     */
     local unmodifiedColFound := False
 
-    loop read, file {
+    loop read, filename {
         lineN := A_Index
         keyFs := []
         ;for each cell in the csv,
@@ -201,7 +199,7 @@ readLayout(file, layoutN)
         */
         case modifiers[cellN] = commentString:
             return ;just do nothing.
-        ;interpret a deadkey (which should specify another csv file)
+        ;interpret a deadkey (which should specify another csv filename)
         case (Substr(cellText, 1, StrLen(deadKeyString)) = deadKeyString):
             deadKeyFile := Substr(cellText, StrLen(deadKeyString) + 1)
             deadKeyTable := readDeadKey(deadKeyFile, currentKey, layoutDir)
@@ -244,14 +242,14 @@ readLayout(file, layoutN)
     }
 }
 
-readDeadKey(file, pressedKey, layoutDir)
+readDeadKey(filename, pressedKey, layoutDir)
 {
     static deadKeyDirName := "deadKeys"
     ;initialize vars:
     ;create a number of possible file locations
-    layoutDirFile := layoutDir '\' file
-    layoutSubdirFile := layoutDir '\' deadKeyDirName '\' file
-    subdirFile := deadKeyDirName '\' file
+    layoutDirFile := layoutDir '\' filename
+    layoutSubdirFile := layoutDir '\' deadKeyDirName '\' filename
+    subdirFile := deadKeyDirName '\' filename
     ;use the first file location where the file was found
     foundFile := FileExist(layoutSubdirFile)
         ? layoutSubdirFile
@@ -259,12 +257,12 @@ readDeadKey(file, pressedKey, layoutDir)
             ? layoutDirFile
             : FileExist(subdirFile)
                 ? subdirFile
-                : FileExist(file)
-                    ? file
+                : FileExist(filename)
+                    ? filename
                     : ''
     ;error if the dead key file was not found at all
     if (not foundFile) {
-        throw error("no file found for dead key: " file)
+        throw error("no file found for dead key: " filename)
     }
     ;the return table to contain a specification of the dead key
     keyTable := Map()
@@ -392,7 +390,7 @@ normalizeEscapes(rawString)
         *     mode.
         * {Blind}
         */
-        switch (escapeSequence, "Off"){
+        switch escapeSequence, "Off" {
         case 'Text', 'Raw':
         ;OPTION make text mode work differently from raw
        /* raw mode will be active anyway, so just ignore this tag and then exit
