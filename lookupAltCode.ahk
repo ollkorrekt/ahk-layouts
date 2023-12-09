@@ -1,6 +1,12 @@
-;TODO document this
+/* Takes in a string representing a number typed on the keypad and returns its
+ * character when interpreted as an alt code. Currently, does not accept hex
+ * input.
+ */
 lookupAltCode(numberString){
+    ;characters less than 256 are not treated as unicode
     if (numberString < 256){
+        ;TODO hex input should be treated without the 0x right?
+        ;if there is a prefixed zero, use ANSI characters
         if (SubStr(numberString, 1, 1) = '0'){
             ;Windows-1252 codes which override the Latin-1 control chars
             switch (numberString){
@@ -36,6 +42,7 @@ lookupAltCode(numberString){
                 ;control character OSC
                 case 158: return 'ž'
                 case 159: return 'Ÿ'
+                ;ANSI Chars coincide with Unicode other than those above.
                 default:  return Chr(numberString)
             }
         } else {
@@ -73,7 +80,7 @@ lookupAltCode(numberString){
                 case 29:  return '↔'
                 case 30:  return '▲' ;up pointer
                 case 31:  return '▼' ;down pointer
-                ;printable ASCII
+                ;printable ASCII, coincides with Unicode; see default case
                 case 127: return '⌂'
                 case 128: return 'Ç'
                 case 129: return 'ü'
@@ -203,9 +210,11 @@ lookupAltCode(numberString){
                 case 253: return '²' ;squared sign
                 case 254: return '■' ;black square
                 case 255: return ' ' ;nonbreaking space
+                ;just give unicode characters for printable ASCII, same codes
                 default:  return Chr(numberString)
             }
         }
+    ;characters ≥ 256 give you the corresponding unicode character
     } else {
         return Chr(numberString)
     }

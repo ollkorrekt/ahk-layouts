@@ -32,14 +32,14 @@ deadKeySend(key)
     if (deadKeyQueue.Length > 0) {
         deadKeySend(deadKeyLookup(deadKeyQueue.RemoveAt(1), key, currentDefault))
     } else {
-        Send '{Raw}' key ;maybe should use raw mode here, but want character escapes.
-       /* could be danguerous since sent text can be edited by external files.
-        * for example, {Click} and {Launch_X} are available. To be safe, we
-        * should reccomend to make layout files administrator read only, maybe.
+        Send '{Raw}' key
+       /* Sending without 'raw'could be danguerous since sent text can be edited
+        * by external files. for example, {Click} and {Launch_X} are available.
         * I don't think it's too dangerous, as non-admin ahk cannot do admin
-        * actions.
+        * actions. But we use raw to be safe anyway, requiring unescaping
+        * characters.
         */
-        currentDefault := ''
+        currentDefault := '' ;remove saved default key
     }
 }
 
@@ -372,6 +372,7 @@ normalizeEscapes(rawString)
         if (not foundClosingBrace){
             break
         }
+        normalizedString .= SubStr(rawString, 1, foundBrace - 1)
         sequenceLength := foundClosingBrace - foundBrace - 1
         escapeSequence := SubStr(rawString, foundbrace+1, sequenceLength)
         rawString := SubStr(rawString, foundClosingBrace+1)
