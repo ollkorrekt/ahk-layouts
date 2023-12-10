@@ -1,18 +1,20 @@
-﻿,<―
-m,—
-n,–
-0,‒
--,−
-~,⁓
-h,‐
-H,‑
-2,⸺
-3,⸻
-s,{u+00ad}
-.,·
-*,⋅
->,‧
-ʔ,ꞏ
-ː,ˑ
-𐞁,𐞂
- ,―
+﻿,<―,COMMENT
+m,—,em dash
+n,–,en dash
+0,‒,figure dash
+-,−,minus
+~,⁓,swung dash
+h,‐,(unicode) hyphen
+H,‑,unbreaking hyphen
+2,⸺,2 em dash
+3,⸻,3 em dash
+s,{u+00ad},soft hyphen
+.,·,"interpunct, aka middle dot"
+*,⋅,dot operator
+>,‧,hyphenation point
+b,•,bullet point
+×b,∙,"bullet operator; the math version of •"
+ʔ,ꞏ,sinological dot; represents the ʔ sound or neutral tone
+ː,ˑ,"half triangular colon, for medium length sounds in IPA"
+𐞁,𐞂,superscript half triangular colon
+ ,―,"quotation dash, aka horizontal bar"

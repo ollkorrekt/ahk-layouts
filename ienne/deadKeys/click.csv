@@ -1,16 +1,16 @@
-﻿,ǀ
-|,ǀ
-‸|,𐞶
-\,ǁ
-‸\,𐞷
-o,ʘ
-ᵒ,𐞵
-t,ǂ
-ᵗ,𐞸
-{!},ǃ
-ꜝ,ꜝ
-1,¡
-¹,ꜞ
-{!}{U+02de},𝼊
-ꜝ{U+02de},𐞹
-k,ʞ
+﻿,ǀ,This dead key represents click consonants' symbols from the IPA.
+|,ǀ,
+‸|,𐞶,
+\,ǁ,
+‸\,𐞷,
+o,ʘ,
+ᵒ,𐞵,
+t,ǂ,
+ᵗ,𐞸,
+{!},ǃ,the distinction between ! and ǃ is not observed in superscript.
+ꜝ,ꜝ,
+1,¡,
+¹,ꜞ,
+{!}{U+02de},𝼊,retroflex click
+ꜝ{U+02de},𐞹,"superscript retroflex click; I am artificially separating 𐞹, the click letter, from ꜝ̡ , the punctuation "
+k,ʞ,"old ""velar click"""

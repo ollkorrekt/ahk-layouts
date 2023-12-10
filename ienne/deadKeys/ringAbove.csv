@@ -1,11 +1,12 @@
-﻿,{U+030a}
-A,Å
-a,å
-U,Ů
-u,ů
-w,ẘ
-y,ẙ
-ʔ,{U+0357}
-ʕ,{U+0351}
- ,˚
-~,⸛
+﻿,{U+030a},COMMENT
+A,Å,
+a,å,
+U,Ů,
+u,ů,
+w,ẘ,
+y,ẙ,
+ı,i̇̊,i + Dot Above + Ring Above
+ʔ,{U+0357},"not ring above, but right half ring x͗ for IPA more rounded"
+ʕ,{U+0351},"not ring above, but left half ring x͑ for IPA less rounded"
+ ,˚,
+~,⸛,

@@ -1,22 +1,23 @@
-﻿FALSE,<×
-x,×
--,−
-*,⋅
-{+},±
-_,∓
-v,√
-=,≠
-≅,≇
-`,≈
-≈,≉
-~,∼
-<,≪
->,≫
-{U+031a},¬
-8,∞
-t,†
-T,‡
-s,§
-p,¶
-|,‖
-/,÷
+﻿FALSE,<×,This deadkey gives math and typographic symbols; there is no hard and fast rule for how each character is modified.
+x,×,times symbol
+-,−,minus
+*,⋅,dot operator
+•,∙,bullet operator
+{+},±,
+_,∓,
+v,√,square root
+=,≠,
+≅,≇,
+`,≈,
+≈,≉,
+~,∼,
+<,≪,
+>,≫,
+{U+031a},¬,unreleased diacritic x̚ to visually similar logical negation
+8,∞,
+t,†,
+T,‡,
+s,§,
+p,¶,
+|,‖,double vertical line = cesura mark = IPA major prosodic unit mark
+/,÷,

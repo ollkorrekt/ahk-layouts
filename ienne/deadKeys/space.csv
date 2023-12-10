@@ -1,17 +1,17 @@
-﻿,< 
-n, 
-m, 
-3, 
-4, 
-6, 
-0, 
-., 
-t, 
-T, 
-h, 
-{+}, 
-c,　
-z,{U+200b}
-Z,{U+2060}
-j,{U+200c}
-J,{U+200d}
+﻿,< ,default non-breaking space
+n, ,en space
+m, ,em space
+3, ,1/3 em space
+4, ,1/4 em space
+6, ,1/6 em space
+0, ,figure space
+., ,punctuation space
+t, ,thin space (≈ 1/5 em)
+T, ,thin non-breaking space
+h, ,hair space
+*, ,math space
+c,　,fullwidth space
+z,{U+200b},zero width space
+Z,{U+2060},"zero width non-breaking space (not ZWNBSP U+FEFF char, which is really a BOM)"
+j,{U+200c},zero width non-joiner
+J,{U+200d},zero width joiner

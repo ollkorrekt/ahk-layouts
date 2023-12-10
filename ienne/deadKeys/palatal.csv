@@ -1,9 +1,9 @@
-﻿ ,{U+0321}
-c,ç
-ᶜ,ᶜ̧
-j,ɟ
-ʲ,ᶡ
-l,ʎ
-ˡ,𐞠
-n,ɲ
-ⁿ,ᶮ
+﻿ ,{U+0321},COMMENT
+c,ç,this character uses combining cedilla and may not display properly
+ᶜ,ᶜ̧,
+j,ɟ,
+ʲ,ᶡ,
+l,ʎ,
+ˡ,𐞠,
+n,ɲ,
+ⁿ,ᶮ,
