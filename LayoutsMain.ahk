@@ -1,6 +1,9 @@
 ﻿#Requires AutoHotkey v2.0
 FileEncoding "UTF-8"
 
+#Include DeadKey.ahk
+#Include NormalizeEscapes.ahk
+
 ;TODO add the layout changing code, which can be activated by a key press
 ;OPTION add ability to activate hotkey, change layout from a hotkey itself - already sort of covered by hotkey stacking, but this does not allow us to have a compound nonspacing char.
 ;OPTION deadkey lock, so currently active dead keys will stay on until pressed again
@@ -61,7 +64,7 @@ deadKeyLookup(deadKeyTable, key, default)
     if (default and key == default) {
         ;if the same key is pressed again, give back the nonspacing diacritic.
         return deadKeyTable.nonspacing
-    } if (deadKeyTable.Has(key)) {
+    } if (deadKeyTable.keyTable.Has(key)) {
         return deadKeyTable[key]
     }
    /* otherwise, we give back the nonspacing diacritic applied to the pressed
@@ -97,6 +100,7 @@ readLayout(filename, layoutN)
     if (not fileExist(filename)) {
         throw error("no file found for layout: " filename)
     }
+    ;TODO hotIf any condition
     HotIf((*) => layout == layoutN) ;only enabled if the layout is selected
     
     local layoutDir
@@ -202,7 +206,7 @@ readLayout(filename, layoutN)
         ;interpret a deadkey (which should specify another csv filename)
         case (Substr(cellText, 1, StrLen(deadKeyString)) = deadKeyString):
             deadKeyFile := Substr(cellText, StrLen(deadKeyString) + 1)
-            deadKeyTable := readDeadKey(deadKeyFile, currentKey, layoutDir)
+            deadKeyTable := DeadKey(deadKeyFile, currentKey, layoutDir)
             return (*) => deadKeyAdd(deadKeyTable)
         ;interpret a normal cell
         default:
@@ -242,93 +246,6 @@ readLayout(filename, layoutN)
     }
 }
 
-readDeadKey(filename, pressedKey, layoutDir)
-{
-    static deadKeyDirName := "deadKeys"
-    ;initialize vars:
-    ;create a number of possible file locations
-    layoutDirFile := layoutDir '\' filename
-    layoutSubdirFile := layoutDir '\' deadKeyDirName '\' filename
-    subdirFile := deadKeyDirName '\' filename
-    ;use the first file location where the file was found
-    foundFile := FileExist(layoutSubdirFile)
-        ? layoutSubdirFile
-        : FileExist(layoutDirFile)
-            ? layoutDirFile
-            : FileExist(subdirFile)
-                ? subdirFile
-                : FileExist(filename)
-                    ? filename
-                    : ''
-    ;error if the dead key file was not found at all
-    if (not foundFile) {
-        throw error("no file found for dead key: " filename)
-    }
-    ;the return table to contain a specification of the dead key
-    keyTable := Map()
-    keyTable.nonspacing := ''
-    keyTable.postfix := True
-   /* keyTable.nonspacing is what to send when no specified key combination is
-    * pressed;
-    * keyTable.default is the key to press to directly get nonspacing; if it is
-    * not defined, you cannot do that;
-    * keyTable.postfix to place "nonspacing" ver. of diacritic to the right or
-    * left of a given key combination. True for postfix, False for prefix.
-    * 
-    * maybe it's obvious that this should be a class, but then again perhaps so
-    * should some other values I'm not sure of.
-    */
-    local currentKey ;stored keystroke value to be used when result is read
-
-    loop read, foundFile {
-        lineN := A_Index
-        ;for each cell in the csv,
-        loop parse, A_LoopReadLine, "CSV" {
-            cellN := A_Index
-            ;normalize any escape sequences to their literal chars
-            cellText := normalizeEscapes(A_LoopField)
-            ;the cells in the header
-            if (lineN = 1) {
-                ;first cell optionally specifies an alternate default keystroke
-                switch cellN
-                {
-                case 1:
-                   /* if this cell is false but not blank, no default will be
-                    * used; usu. for dead keys that do not have a non-spacing
-                    * variant and which need the slot of their key for a
-                    * combination, like the ienne layout's 6 -> ⁶
-                    */
-                    if (cellText and (cellText != "False")){
-                        keyTable.default := cellText
-                    ;otherwise if it's blank use a default same as the dead key
-                    } else if (cellText = ""){
-                        keyTable.default := pressedKey
-                    }
-                case 2:
-                    firstChar := SubStr(cellText, 1, 1)
-                    if (firstChar = '<' or firstChar = '>') {
-                        cellText := SubStr(cellText, 2)
-                        keyTable.postfix := firstChar = '>'
-                    }
-                    keyTable.nonspacing := cellText
-               /* There is no default case; other cells that are not in the
-                * first two columns are ignored as comments
-                */
-                }
-            ;interpret a key header
-            } else switch (cellN) {
-            case 1:
-                currentKey := cellText
-            ;interpret a key's result when the dead key is applied to it
-            case 2:
-                keyTable[currentKey] := cellText
-            ;again, any other cells will be ignored as comments.
-            }
-        }
-    }
-    return keyTable
-}
-
 /* Given a normalized hotkey modifier, toggle whether shift is held (i.e.,
  * whether "+" is present).
  */
@@ -356,90 +273,5 @@ normalizeModifier(modifier)
 }
 
 ;TODO document this, add support for backtick escapes too.
-normalizeEscapes(rawString)
-{
-   /* We only want the escaped characters, not any escaped clicks or anything;
-    * those could be too dangerous. Furthermore, we want any escaped characters
-    * to be treated the same as equivalent sequences, or as the literals.
-    */
-    local foundBrace
-    local foundClosingBrace
-    local normalizedString := ""
-    While (foundBrace := InStr(rawString, '{')){
-        foundClosingBrace := InStr(rawString, '}', "Off", foundBrace)
-        if (not foundClosingBrace){
-            break
-        }
-        normalizedString .= SubStr(rawString, 1, foundBrace - 1)
-        sequenceLength := foundClosingBrace - foundBrace - 1
-        escapeSequence := SubStr(rawString, foundbrace+1, sequenceLength)
-        rawString := SubStr(rawString, foundClosingBrace+1)
-        convertedEscape := ""
-        ;OPTION allow sending some of these with a specific exception
-       /* Don't currently cover the following brace escape sequences, which may
-        * be safe:
-        * {Escape}, {Esc}, {Ctrl} etc., {Alt} etc., {LWin} etc., {AppsKey},
-        *     {Sleep}, {vkXXscYYY} etc., {Browser_Back} etc., {Volume_Mute}
-        *     etc., {Launch_X}, {CtrlBreak}, {Pause}, {Click} etc., {LButton}
-        *     etc., all because of security concerns - note that sending escape
-        *     might still be possible with control chars.
-        * {Delete}, {Del}, {Insert}, {Ins}, {Up}, {Down}, {Left}, {Right},
-        *     {Home}, {End}, {PgUp}, {PgDn}, {CapsLock}, {ScrollLock},
-        *     {NumLock}, {Shift}, {LShift}, {RShift}, {Shift down}, {Numpad0}
-        *     etc., {PrintScreen} as there is no clear way to send these in raw
-        *     mode.
-        * {Blind}
-        */
-        switch escapeSequence, "Off" {
-        case 'Text', 'Raw':
-        ;OPTION make text mode work differently from raw
-       /* raw mode will be active anyway, so just ignore this tag and then exit
-        * out of text processing, ignoring other brace escapes.
-        */
-            break
-        case "":
-        ;look for the special escape sequence '{}}'
-            if (Substr(rawString, 1, 1) = '}'){
-                rawString := SubStr(rawString, 2)
-                convertedEscape := '}'
-            } else {
-                convertedEscape := '{}'
-            }
-        case '!', '#', '+', '^', '{':
-        ;escape sequences that just output that character
-            convertedEscape := escapeSequence
-        case 'Enter':
-            convertedEscape := '`n'
-        case 'Space':
-            convertedEscape := ' '
-        case 'Tab':
-            convertedEscape := '`t'
-        case 'Backspace', 'BS':
-            convertedEscape := '`b'
-        default:
-            ;Alt Codes
-            if (SubStr(escapeSequence, 1, 4) = "ASC ") {
-                try {
-                    convertedEscape := lookupAltCode(SubStr(escapeSequence, 5))
-                } catch ValueError {
-                    convertedEscape := '{' escapeSequence '}'
-                }
-            ;unicode
-            } else if (SubStr(escapeSequence, 1, 2) = "U+") {
-                try {
-                    codePoint := '0x' . SubStr(escapeSequence, 3)
-                    convertedEscape := chr(codePoint)
-                } catch ValueError, TypeError {
-                    convertedEscape := '{' escapeSequence '}'
-                }
-            ;not a valid brace escape
-            } else {
-                convertedEscape := '{' escapeSequence '}'
-            }
-        }
-        normalizedString .= convertedEscape
-    }
-    return normalizedString . rawString
-}
 
 

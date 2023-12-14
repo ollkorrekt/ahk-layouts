@@ -1,6 +1,6 @@
 /* Takes in a string representing a number typed on the keypad and returns its
  * character when interpreted as an alt code. Currently, does not accept hex
- * input.
+ * input with the prefixed +.
  */
 lookupAltCode(numberString){
     ;characters less than 256 are not treated as unicode
