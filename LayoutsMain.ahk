@@ -64,7 +64,7 @@ deadKeyLookup(deadKeyTable, key, default)
     if (default and key == default) {
         ;if the same key is pressed again, give back the nonspacing diacritic.
         return deadKeyTable.nonspacing
-    } if (deadKeyTable.keyTable.Has(key)) {
+    } if (deadKeyTable.Has(key)) {
         return deadKeyTable[key]
     }
    /* otherwise, we give back the nonspacing diacritic applied to the pressed

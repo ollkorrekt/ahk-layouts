@@ -97,4 +97,6 @@ class DeadKey{
         get => this.keyTable[key]
         set => this.keyTable[key] := value
     }
+
+    Has(key) => this.keyTable.Has(key)
 }
