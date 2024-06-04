@@ -7,6 +7,7 @@ class DeadKey{
     keyTable := Map()
     nonspacing := ''
     postfix := True
+    default := ''
    /* keyTable.nonspacing is what to send when no specified key combination is
     * pressed;
     * keyTable.default is the key to press to directly get nonspacing; if it is
