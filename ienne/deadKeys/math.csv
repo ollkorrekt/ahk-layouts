@@ -1,7 +1,8 @@
 ﻿FALSE,<×,This deadkey gives math and typographic symbols; there is no hard and fast rule for how each character is modified.
 x,×,times symbol
 -,−,minus
-*,⋅,dot operator
+*,∗,asterisk operator
+.,⋅,dot operator
 •,∙,bullet operator
 {+},±,
 _,∓,
@@ -21,6 +22,7 @@ s,§,
 p,¶,
 |,‖,double vertical line = cesura mark = IPA major prosodic unit mark
 /,÷,
+?,∕,division slash; the real "math" version of / rather than ÷
 2,↊,
 3,↋,
 ø,∅,null sign

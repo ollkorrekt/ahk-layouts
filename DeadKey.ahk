@@ -14,9 +14,6 @@ class DeadKey{
     * not defined, you cannot do that;
     * keyTable.postfix to place "nonspacing" ver. of diacritic to the right or
     * left of a given key combination. True for postfix, False for prefix.
-    * 
-    * maybe it's obvious that this should be a class, but then again perhaps so
-    * should some other values I'm not sure of.
     */
 
     ;TODO document this
