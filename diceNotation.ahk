@@ -28,7 +28,7 @@ class DiceNotation {
         this.tag := tag
         this.data := data
         switch tag, "Off" {
-        case "die": this.diceN := 1
+        case "die", "dice": this.diceN := args.Get(1, 1)
         case "const": this.diceN := 0
         case "op":
             this.left := args[1]
@@ -55,7 +55,12 @@ class DiceNotation {
 
     rolls(){
         switch this.tag {
-        case "die": return {dice: [this.data.roll()], const: 0}
+        case "die", "dice":
+            dice := []
+                loop this.diceN {
+                    dice.push(this.data.roll())
+                }
+            return {dice: dice, const: 0}
         case "const": return {dice: [], const: this.data}
         case "op": 
             leftRolls := this.left.rolls()
@@ -92,6 +97,11 @@ class DiceNotation {
             return {dice: newDice, const: oldRolls.const}
         }
     }
+
+    roll(){
+        result := this.rolls()
+        return sum(result.dice) + result.const
+    }
 }
 
 parseDiceNotation(text){
@@ -108,15 +118,48 @@ parseDiceNotation(text){
     `)\s*$
     (?(DEFINE) (?<parens>\( (?: [^()]++ | (?&parens) )++ \)) )
     )"
-    static parenPattern := "ix)^\s*+\((.*)\)\s*$"
-    static keepPattern := "ix)^\s*+(.*)(kh?(\d*)(l(\d*))?$"
-    static dicePattern := "ix)^\s*+(\d*)d(\d+|F)$"
+    static parenPattern := "ix)^\s*+\((.*)\)\s*$" ;TODO ignore more whitespace
+    static keepPattern := "ix)^\s*+(.*)(?:kh?(\d*)(?:l(\d*))?)\s*$"
+    static dicePattern := "ix)^\s*+(\d*)d(\d+|F|C|%)\s*$"
     
-    if RegexMatch(text, opPattern, &match){
-        first := match[1]
+    switch {
+    case RegexMatch(text, opPattern, &match):
+        left := match[1]
         op := match[2]
-        second := match[3]
-        return {first:first, op:op, second:second}
+        right := match[3]
+        switch op {
+        case "−":
+            op := "-"
+        case "∗", "×", "⋅", "∙":
+            op := "*"
+        case "⁄", "∕", "÷":
+            op := "/"
+        }
+        return DiceNotation("op", op, parseDiceNotation(left), parseDiceNotation(right))
+    case RegexMatch(text, parenPattern, &match):
+        return parseDiceNotation(match[1])
+    case RegexMatch(text, keepPattern, &match):
+        note := match[1]
+        high := match[2] ? match[2] : 0
+        low := match[3] ? match[3] : 0
+        return DiceNotation("keep", parseDiceNotation(note), high, low)
+    case RegexMatch(text, dicePattern, &match):
+        n := match[1] ? match[1] : 1
+        dieType := match[2]
+        switch dieType, "Off" {
+        case "F": thisDie := Die([-1,0,1], true)
+        case "C": thisDie := Die([0,1], true)
+        case "%": thisDie := Die(100)
+        default: thisDie := Die(dieType)
+        }
+        return DiceNotation("dice", thisDie, n)
+    default:
+        try {
+            const := Number(text)
+        } catch TypeError {
+            throw error('unrecognized notation fragment: "' text '"')
+        }
+        return DiceNotation("const", const)
     }
 }
 
@@ -257,16 +300,7 @@ x.insertAtGap(2,8)
 str := toStr_Array(x)
 insertionSort(x)
 
-x := InputBox('enter notation').value
-x := parseDiceNotation(x)
-MsgBox(x.first)
-MsgBox(x.op)
-MsgBox(x.second)
-
-c := Die(6)
-n := DiceNotation("op", "+", DiceNotation("die", c), DiceNotation("die", c))
-n := DiceNotation("op", "+", n, n)
-n := DiceNotation("keep", n, 1,1)
-x := n.rolls()
-MsgBox(toStr_Array(x.dice))
+n := parseDiceNotation(InputBox('enter notation').value)
+x := n.roll()
+MsgBox(x)
 
