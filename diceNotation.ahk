@@ -1,7 +1,7 @@
 #Requires AutoHotkey v2.0
 
 #include <array_ToString>
-#include <foldl>
+#include <sum>
 
 class Die {
     __New(sides := 6, custom := false){
@@ -167,8 +167,6 @@ parseDiceNotation(text){
         return DiceNotation("const", const)
     }
 }
-
-sum(arr) => foldl(arr, (a,b) => a + b, 0)
 
 fmap(collection, f){
     out := collection.Clone()
