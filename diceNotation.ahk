@@ -30,7 +30,9 @@ class DiceNotation {
         this.tag := tag
         this.data := data
         switch tag, "Off" {
-        case "die", "dice": this.diceN := args.Get(1, 1)
+        case "die", "dice":
+            this.diceN := args.Get(1, 1) ;specified # of dice, or one die
+            this.tag := "dice" ;normalize this tag
         case "const": this.diceN := 0
         case "op":
             this.left := args[1]
@@ -45,19 +47,19 @@ class DiceNotation {
             this.low := args[2]
             this.diceN := this.high + this.low
             if (this.diceN > this.data.diceN){
-                throw error(Format(
+                throw ValueError(Format(
                     "cannot keep {} out of {} dice.", 
                     this.diceN, this.data.diceN
                 ), -1) ;note that this lets you keep all the dice, even though that's pointless.
             }
         default:
-            throw error(Format("{} is an invalid notation tag.", tag), -1)
+            throw ValueError(Format("{} is an invalid notation tag.", tag), -1)
         }
     }
 
     rolls(){
         switch this.tag {
-        case "die", "dice":
+        case "dice":
             dice := []
                 loop this.diceN {
                     dice.push(this.data.roll())
@@ -83,7 +85,7 @@ class DiceNotation {
                 const := (leftRolls.const + sum(leftRolls.dice))
                     / (rightRolls.const + sum(rightRolls.dice))
             default:
-                throw error(Format("Invalid operation {}", this.data), -1) ;TODO move error checking to validation.
+                throw ValueError(Format("Invalid operation {}", this.data), -1) ;TODO move error checking to validation.
             }
             return {dice: dice, const: const}
         case "keep":
@@ -159,22 +161,10 @@ parseDiceNotation(text){
         try {
             const := Number(text)
         } catch TypeError {
-            throw error('unrecognized notation fragment: "' text '"')
+            throw ValueError('unrecognized notation fragment: "' text '"')
         }
         return DiceNotation("const", const)
     }
-}
-
-;[a] -> (b -> a -> b) -> b -> b ; equiv to foldl
-foldArr(arr, f, z?){
-    arrCopy := arr.Clone()
-    if !(IsSet(z)){
-        z := arrCopy.RemoveAt(1)
-    }
-    while (arrCopy.Length > 0){
-        z := f(z, arrCopy.RemoveAt(1))
-    }
-    return z
 }
 
 foldl(collection, f, z?){
@@ -184,6 +174,9 @@ foldl(collection, f, z?){
         } else {
             z := f(z, item)
         }
+    }
+    if !(IsSet(z)){
+        throw ValueError("A default value must be provided to fold an empty collection", -1)
     }
     return z
 }
