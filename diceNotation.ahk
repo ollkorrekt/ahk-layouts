@@ -168,14 +168,6 @@ parseDiceNotation(text){
     }
 }
 
-fmap(collection, f){
-    out := collection.Clone()
-    for i, item in out{
-        out[i] := f(item)
-    }
-    return out
-}
-
 ;find the first index i where arr[i] <= item < arr[i+1], or arr.Length + 1 if arr[-1]  < item, or 1 otherwise.
 binarySearch(arr, item, length := arr.Length, compare := (a,b) => a - b){ ;assuming arr is already sorted
     lowerBound := 1 ;i must be >= this
