@@ -1,6 +1,7 @@
 #Requires AutoHotkey v2.0
 
 #include <array_ToString>
+#include <foldl>
 
 class Die {
     __New(sides := 6, custom := false){
@@ -165,20 +166,6 @@ parseDiceNotation(text){
         }
         return DiceNotation("const", const)
     }
-}
-
-foldl(collection, f, z?){
-    for item in collection {
-        if !(IsSet(z)){
-            z := item
-        } else {
-            z := f(z, item)
-        }
-    }
-    if !(IsSet(z)){
-        throw ValueError("A default value must be provided to fold an empty collection", -1)
-    }
-    return z
 }
 
 sum(arr) => foldl(arr, (a,b) => a + b, 0)
