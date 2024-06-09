@@ -1,5 +1,7 @@
 #Requires AutoHotkey v2.0
 
+#include <array_ToString>
+
 class Die {
     __New(sides := 6, custom := false){
         this.sides := sides
@@ -87,7 +89,7 @@ class DiceNotation {
         case "keep":
             oldRolls := this.data.rolls()
             oldDice := oldRolls.dice
-            MsgBox(toStr_Array(oldDice))
+            MsgBox(String(oldDice))
             insertionSort(oldDice)
             newDice := oldDice.Clone() ;this will naturally make newDice's first values the lowest.
             newDice.Length := this.high + this.low
@@ -118,9 +120,9 @@ parseDiceNotation(text){
     `)\s*$
     (?(DEFINE) (?<parens>\( (?: [^()]++ | (?&parens) )++ \)) )
     )"
-    static parenPattern := "ix)^\s*+\((.*)\)\s*$" ;TODO ignore more whitespace
-    static keepPattern := "ix)^\s*+(.*)(?:kh?(\d*)(?:l(\d*))?)\s*$"
-    static dicePattern := "ix)^\s*+(\d*)d(\d+|F|C|%)\s*$"
+    static parenPattern := "ix)^\s*+\((.*)\)\s*$"
+    static keepPattern := "ix)^\s*+(.*)(?:k\s*+h?\s*+(\d*)\s*+(?:l\s*+(\d*))?)\s*$"
+    static dicePattern := "ix)^\s*+(\d*)\s*+d\s*+(\d+|F|C|%)\s*$"
     
     switch {
     case RegexMatch(text, opPattern, &match):
@@ -255,26 +257,6 @@ insertAtGap(arr, i, item, length?, compare?){ ; put the item in list at i, shift
 insertGap(arr, item, length?, compare?)
     => insertAtGap(arr, binarySearchGap(arr, item, length?, compare?), item)
 
-toStr_Array(arr){
-    switch arr.Length{
-    case 0:
-        return "[]" ;otherwise [] would look like [
-    case 1:
-        if !arr.Has(1){
-            return "[unset]" ;otherwise [unset] would look like [].
-        }
-    } ;note that length 1 arrays fall through here unless they have an unset element.
-    str := "[" ;TODO what should this method be called?
-    for item in arr {
-        if IsSet(item){ ;if not set, will just have a space after the comma.
-            str .= item ;TODO item.toStr()?
-        }
-        str .= ", "
-    }
-    str := Substr(str,1, -2) ;get rid of final comma and space
-    str .= "]"
-    return str
-}
 
 ;Although I implemented this with arrays in mind, it would technically work for any enumerable, but it always returns an array.
 insertionSort(arr, compare?){
@@ -293,11 +275,10 @@ insertionSortNondestructive(arr, compare?){
     return outArr
 } ;uses O(n) extra space to construct a whole new array. if desired, a destructive sort can be used instead that is in-place.
 
-
 x := [1,2,3,4,5,0,,4]
 Array.Prototype.insertAtGap := insertAtGap
 x.insertAtGap(2,8)
-str := toStr_Array(x)
+str := array_ToString(x)
 insertionSort(x)
 
 n := parseDiceNotation(InputBox('enter notation').value)
