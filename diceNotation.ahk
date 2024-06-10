@@ -2,6 +2,7 @@
 
 #include <array_ToString>
 #include <sum>
+#include <array_binarySearch>
 
 class Die {
     __New(sides := 6, custom := false){
@@ -168,21 +169,6 @@ parseDiceNotation(text){
     }
 }
 
-;find the first index i where arr[i] <= item < arr[i+1], or arr.Length + 1 if arr[-1]  < item, or 1 otherwise.
-binarySearch(arr, item, length := arr.Length, compare := (a,b) => a - b){ ;assuming arr is already sorted
-    lowerBound := 1 ;i must be >= this
-    upperBound := length + 1 ;i must be <= this
-    while lowerBound < upperBound {
-        bound := (lowerBound + upperBound) // 2
-        if compare(item, arr[bound]) >= 0 { ;= same as > so that will be stable w/foldl.
-            lowerBound := bound + 1 ;item can't be at bound, it has to be to the right of it.
-        } else {
-            upperBound := bound ;item could be inserted where bound is now, which would put it to the left.
-        }
-    }
-    return lowerBound
-}
-
 binarySearchGap(arr, item, length := arr.Length, compare := (a,b) => a - b){ ;assuming arr is already sorted
     lowerBound := 1 ;i must be >= this
     upperBound := length + 1 ;i must be <= this
@@ -206,9 +192,8 @@ binarySearchGap(arr, item, length := arr.Length, compare := (a,b) => a - b){ ;as
     return lowerBound
 }
 
-
 insert(arr, item, compare?)
-    => arr.InsertAt(binarySearch(arr, item, compare?), item)
+    => arr.InsertAt(arr.binarySearch(item, compare?), item)
 
 insertAtGap(arr, i, item, length?, compare?){ ; put the item in list at i, shifting other items over until they hit an unset item, then overwriting it.
     while (i <= arr.Length and arr.Has(i)){
