@@ -1,8 +1,9 @@
 #Requires AutoHotkey v2.0
 
+#include <array_binarySearch>
+#include <array_binarySearchGap>
 #include <array_ToString>
 #include <sum>
-#include <array_binarySearch>
 
 class Die {
     __New(sides := 6, custom := false){
@@ -169,28 +170,7 @@ parseDiceNotation(text){
     }
 }
 
-binarySearchGap(arr, item, length := arr.Length, compare := (a,b) => a - b){ ;assuming arr is already sorted
-    lowerBound := 1 ;i must be >= this
-    upperBound := length + 1 ;i must be <= this
-    while lowerBound < upperBound {
-        bound := (lowerBound + upperBound) // 2
-        i := bound
-        while !arr.Has(i){ ;if there is a gap, use the first filled index after the gap
-            i += 1
-            if i > length { ;if there are no filled indicies after bound, then we can limit the length to bound and try again.
-                length := bound
-                upperBound := length + 1
-                break(2)
-            }
-        }
-        if compare(item, arr[i]) >= 0 { ;= same as > so that will be stable w/in-order insertion.
-            lowerBound := bound + 1 ;item can't be at bound, it has to be to the right of it.
-        } else {
-            upperBound := bound ;item could be inserted where bound is now, which would put it to the left.
-        }
-    }
-    return lowerBound
-}
+
 
 insert(arr, item, compare?)
     => arr.InsertAt(arr.binarySearch(item, compare?), item)
@@ -210,7 +190,7 @@ insertAtGap(arr, i, item, length?, compare?){ ; put the item in list at i, shift
 }
 
 insertGap(arr, item, length?, compare?)
-    => insertAtGap(arr, binarySearchGap(arr, item, length?, compare?), item)
+    => insertAtGap(arr, arr.binarySearchGap(item, length?, compare?), item)
 
 
 ;Although I implemented this with arrays in mind, it would technically work for any enumerable, but it always returns an array.
