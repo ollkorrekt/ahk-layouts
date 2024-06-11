@@ -172,8 +172,8 @@ parseDiceNotation(text){
 
 
 
-insert(arr, item, compare?)
-    => arr.InsertAt(arr.binarySearch(item, compare?), item)
+insert(arr, item, length?, compare?)
+    => arr.InsertAt(arr.binarySearch(item, length?, compare?), item)
 
 insertAtGap(arr, i, item, length?, compare?){ ; put the item in list at i, shifting other items over until they hit an unset item, then overwriting it.
     while (i <= arr.Length and arr.Has(i)){
@@ -193,19 +193,19 @@ insertGap(arr, item, length?, compare?)
     => insertAtGap(arr, arr.binarySearchGap(item, length?, compare?), item)
 
 
-;Although I implemented this with arrays in mind, it would technically work for any enumerable, but it always returns an array.
 insertionSort(arr, compare?){
     for i, item in arr {
-        arr.Delete(i)
-        insertGap(arr, item, i-1, compare?)
+        arr.RemoveAt(i)
+        insert(arr, item, i-1, compare?)
     }
 }
 
-
+;this is faster
+;Although I implemented this with arrays in mind, it would technically work for any enumerable, but it always returns an array.
 insertionSortNondestructive(arr, compare?){
     outArr := []
     for item in arr {
-        insert(outArr, item, compare?)
+        insert(outArr, item, , compare?)
     }
     return outArr
 } ;uses O(n) extra space to construct a whole new array. if desired, a destructive sort can be used instead that is in-place.
