@@ -175,7 +175,7 @@ parseDiceNotation(text){
 insertionSort(arr, compare?){
     for i, item in arr {
         arr.RemoveAt(i)
-        arr.insert(item, i-1, compare?)
+        arr.insert(item, , i-1, compare?)
     }
 }
 
@@ -184,7 +184,7 @@ insertionSort(arr, compare?){
 insertionSortNondestructive(arr, compare?){
     outArr := []
     for item in arr {
-        outArr.insert(item, , compare?)
+        outArr.insert(item, , , compare?)
     }
     return outArr
 } ;uses O(n) extra space to construct a whole new array. if desired, a destructive sort can be used instead that is in-place.
