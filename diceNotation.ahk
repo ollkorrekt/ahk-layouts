@@ -1,10 +1,10 @@
 #Requires AutoHotkey v2.0
 
 #include <array_binarySearchGap>
-#include <array_insert>
-#include <array_ToString>
+#include <array_toString>
+#include <insertionSorted>
 #include <sum>
-
+;TODO document all functions
 class Die {
     __New(sides := 6, custom := false){
         this.sides := sides
@@ -94,8 +94,8 @@ class DiceNotation {
         case "keep":
             oldRolls := this.data.rolls()
             oldDice := oldRolls.dice
-            MsgBox(String(oldDice))
-            insertionSort(oldDice)
+            MsgBox(String(oldDice)) ;TODO delete this
+            oldDice := insertionSorted(oldDice)
             newDice := oldDice.Clone() ;this will naturally make newDice's first values the lowest.
             newDice.Length := this.high + this.low
             Loop(this.high){ ;copy over the high values
@@ -157,7 +157,7 @@ parseDiceNotation(text){
         case "F": thisDie := Die([-1,0,1], true)
         case "C": thisDie := Die([0,1], true)
         case "%": thisDie := Die(100)
-        default: thisDie := Die(dieType)
+        default: thisDie := Die(dieType) ;TODO how to represent an arbitrary die
         }
         return DiceNotation("dice", thisDie, n)
     default:
@@ -170,26 +170,15 @@ parseDiceNotation(text){
     }
 }
 
-
-
-insertionSort(arr, compare?){
-    for i, item in arr {
-        arr.RemoveAt(i)
-        arr.insert(item, , i-1, compare?)
-    }
-}
-
-;this is faster
-;Although I implemented this with arrays in mind, it would technically work for any enumerable, but it always returns an array.
-insertionSortNondestructive(arr, compare?){
-    outArr := []
-    for item in arr {
-        outArr.insert(item, , , compare?)
-    }
-    return outArr
-} ;uses O(n) extra space to construct a whole new array. if desired, a destructive sort can be used instead that is in-place.
-
-
+/*TODO I want the script to have hotkeys to:
+ * •roll highlighted note
+ * •reroll prev. roll, maybe just if you highlight same text again? Maybe we
+ * could use as a default the prev. notation, when no text is highlighted or
+ * when the highlighted text is not a well-formed note, but in the latter case
+ * it could be confusing to not notatify the user
+ * •maybe open a dialog, like it does now?
+ * but what to do on an error when not in dialog mode?
+ */
 n := parseDiceNotation(InputBox('enter notation').value)
 x := n.roll()
 MsgBox(x)
