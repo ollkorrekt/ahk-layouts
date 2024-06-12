@@ -1,7 +1,7 @@
 #Requires AutoHotkey v2.0
 
-#include <array_binarySearch>
 #include <array_binarySearchGap>
+#include <array_insert>
 #include <array_ToString>
 #include <sum>
 
@@ -172,31 +172,10 @@ parseDiceNotation(text){
 
 
 
-insert(arr, item, length?, compare?)
-    => arr.InsertAt(arr.binarySearch(item, length?, compare?), item)
-
-insertAtGap(arr, i, item, length?, compare?){ ; put the item in list at i, shifting other items over until they hit an unset item, then overwriting it.
-    while (i <= arr.Length and arr.Has(i)){
-        temp := arr[i]
-        arr[i] := item
-        item := temp
-        i++
-    }
-    if arr.Length = i - 1 {
-        arr.push(item) ;extending the array
-    } else {
-        arr[i] := item ;overwriting a gap
-    }
-}
-
-insertGap(arr, item, length?, compare?)
-    => insertAtGap(arr, arr.binarySearchGap(item, length?, compare?), item)
-
-
 insertionSort(arr, compare?){
     for i, item in arr {
         arr.RemoveAt(i)
-        insert(arr, item, i-1, compare?)
+        arr.insert(item, i-1, compare?)
     }
 }
 
@@ -205,16 +184,11 @@ insertionSort(arr, compare?){
 insertionSortNondestructive(arr, compare?){
     outArr := []
     for item in arr {
-        insert(outArr, item, , compare?)
+        outArr.insert(item, , compare?)
     }
     return outArr
 } ;uses O(n) extra space to construct a whole new array. if desired, a destructive sort can be used instead that is in-place.
 
-x := [1,2,3,4,5,0,,4]
-Array.Prototype.insertAtGap := insertAtGap
-x.insertAtGap(2,8)
-str := array_ToString(x)
-insertionSort(x)
 
 n := parseDiceNotation(InputBox('enter notation').value)
 x := n.roll()
