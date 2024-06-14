@@ -20,6 +20,7 @@ class Die {
 }
 
 Coin() => Die([0,1], true)
+Fudge() => Die([-1,0,1], true)
 
 class DiceNotation {
     __New(tag, data, args*){ 
@@ -153,8 +154,8 @@ parseDiceNotation(text){
         n := match[1] ? match[1] : 1
         dieType := match[2]
         switch dieType, "Off" {
-        case "F": thisDie := Die([-1,0,1], true)
-        case "C": thisDie := Die([0,1], true)
+        case "F": thisDie := Fudge()
+        case "C": thisDie := Coin()
         case "%": thisDie := Die(100)
         default: thisDie := Die(dieType) ;TODO how to represent an arbitrary die
         }
