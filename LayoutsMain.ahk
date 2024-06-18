@@ -17,7 +17,7 @@ currentDefault := ''
 
 ;OPTION make these files namable from command line args
 capsEffect := CapsBehavior("keyboardCapsEffects.csv")
-Layout("ienne\ienneLayout.csv", 0)
+Layout("ienne\ienneLayout.csv", 0, &currentLayout)
 
 currentLayout := 0
 layouts := 1
@@ -109,11 +109,12 @@ deadKeyLookup(deadKeyTable, key, default)
  * to a specified layout.
  */
 ChangeLayout(layoutN := "next")
-{ ;TODO what were enable and disable here
-    global currentLayout, layouts, enable, disable
+{
+    global currentLayout, layouts
     if (layoutN = "next") {
         layoutN := Mod(currentLayout + 1, layouts)
     }
+    currentLayout := layoutN
 }
 
 CapsBehavior(filename)

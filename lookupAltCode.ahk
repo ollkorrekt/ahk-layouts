@@ -215,6 +215,7 @@ lookupAltCode(numberString){
             }
         }
     ;characters ≥ 256 give you the corresponding unicode character
+    ;printable ascii range (32-126) gives you the same character as unicode
     } else {
         return Chr(numberString)
     }
