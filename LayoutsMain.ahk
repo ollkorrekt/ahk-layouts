@@ -15,9 +15,46 @@ FileEncoding "UTF-8"
 deadKeyQueue := []
 currentDefault := ''
 
+try{
+FileInstall("ienne\qwertyIenne.csv", "ienne\qwertyIenne.csv")
+FileInstall("keyboardCapsEffects.csv", "keyboardCapsEffects.csv")
+FileInstall("ienne\deadKeys\verticalLine.csv", "ienne\deadKeys\verticalLine.csv")
+FileInstall("ienne\deadKeys\acute.csv", "ienne\deadKeys\acute.csv")
+FileInstall("ienne\deadKeys\breve.csv", "ienne\deadKeys\breve.csv")
+FileInstall("ienne\deadKeys\breveBelow.csv", "ienne\deadKeys\breveBelow.csv")
+FileInstall("ienne\deadKeys\caron.csv", "ienne\deadKeys\caron.csv")
+FileInstall("ienne\deadKeys\circumflex.csv", "ienne\deadKeys\circumflex.csv")
+FileInstall("ienne\deadKeys\click.csv", "ienne\deadKeys\click.csv")
+FileInstall("ienne\deadKeys\dash.csv", "ienne\deadKeys\dash.csv")
+FileInstall("ienne\deadKeys\dieresis.csv", "ienne\deadKeys\dieresis.csv")
+FileInstall("ienne\deadKeys\dotAbove.csv", "ienne\deadKeys\dotAbove.csv")
+FileInstall("ienne\deadKeys\dotBelow.csv", "ienne\deadKeys\dotBelow.csv")
+FileInstall("ienne\deadKeys\grave.csv", "ienne\deadKeys\grave.csv")
+FileInstall("ienne\deadKeys\invertedBreve.csv", "ienne\deadKeys\invertedBreve.csv")
+FileInstall("ienne\deadKeys\invertedBreveBelow.csv", "ienne\deadKeys\invertedBreveBelow.csv")
+FileInstall("ienne\deadKeys\lowVerticalLine.csv", "ienne\deadKeys\lowVerticalLine.csv")
+FileInstall("ienne\deadKeys\macron.csv", "ienne\deadKeys\macron.csv")
+FileInstall("ienne\deadKeys\macronBelow.csv", "ienne\deadKeys\macronBelow.csv")
+FileInstall("ienne\deadKeys\math.csv", "ienne\deadKeys\math.csv")
+FileInstall("ienne\deadKeys\palatal.csv", "ienne\deadKeys\palatal.csv")
+FileInstall("ienne\deadKeys\palatalCurl.csv", "ienne\deadKeys\palatalCurl.csv")
+FileInstall("ienne\deadKeys\quote.csv", "ienne\deadKeys\quote.csv")
+FileInstall("ienne\deadKeys\retroflex.csv", "ienne\deadKeys\retroflex.csv")
+FileInstall("ienne\deadKeys\ringAbove.csv", "ienne\deadKeys\ringAbove.csv")
+FileInstall("ienne\deadKeys\ringBelow.csv", "ienne\deadKeys\ringBelow.csv")
+FileInstall("ienne\deadKeys\space.csv", "ienne\deadKeys\space.csv")
+FileInstall("ienne\deadKeys\superscript.csv", "ienne\deadKeys\superscript.csv")
+FileInstall("ienne\deadKeys\symbol.csv", "ienne\deadKeys\symbol.csv")
+FileInstall("ienne\deadKeys\tilde.csv", "ienne\deadKeys\tilde.csv")
+FileInstall("ienne\deadKeys\toneLetter.csv", "ienne\deadKeys\toneLetter.csv")
+} catch{
+
+}
+
+
 ;OPTION make these files namable from command line args
 capsEffect := CapsBehavior("keyboardCapsEffects.csv")
-Layout("ienne\ienneLayout.csv", 0, &currentLayout)
+Layout("ienne\qwertyIenne.csv", 0, &currentLayout)
 
 currentLayout := 0
 layouts := 1
