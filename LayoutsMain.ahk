@@ -16,6 +16,7 @@ deadKeyQueue := []
 currentDefault := ''
 
 DirCreate("temp")
+DirCreate("ienne\deadKeys")
 FileInstall("ienne.zip", "temp\ienne.zip", true)
 DirCopy("temp\ienne.zip", "temp", true)
 loop files "temp\ienne\*.*", "R" {
